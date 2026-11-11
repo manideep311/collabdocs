@@ -1,0 +1,763 @@
+{
+  "info": {
+    "name": "CollabDocs API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Run the folders top to bottom. Each request stores the ids the next one needs."
+  },
+  "item": [
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Create user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Samyuktha\",\n  \"last_name\": \"Chittimodu\",\n  \"email\": \"samyukthagoud@email.com\",\n  \"phone\": \"9876543210\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('user_id', body.id);",
+                  "pm.test('status is 2xx', () => pm.expect(pm.response.code).to.be.within(200, 299));",
+                  "pm.test('created', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get user by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{user_id}}"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Workspaces",
+      "item": [
+        {
+          "name": "Create workspace",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/workspaces/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "workspaces"
+              ]
+            },
+            "description": "Creates the workspace and adds the owner as an admin member in one transaction.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Design Squad\",\n  \"owner\": \"{{user_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('workspace_id', body.id);",
+                  "pm.test('status is 2xx', () => pm.expect(pm.response.code).to.be.within(200, 299));",
+                  "pm.test('owner counted as member', () => pm.expect(pm.response.json().member_count).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get workspace (with member count)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/workspaces/{{workspace_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspace_id}}"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add member",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/workspaces/{{workspace_id}}/members/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspace_id}}",
+                "members"
+              ]
+            },
+            "description": "Pre-request script creates a second user. Send it twice to see the 409 for a duplicate member.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": \"{{member_user_id}}\",\n  \"role\": \"editor\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.sendRequest({",
+                  "  url: pm.collectionVariables.get('base_url') + '/api/users/',",
+                  "  method: 'POST',",
+                  "  header: { 'Content-Type': 'application/json' },",
+                  "  body: { mode: 'raw', raw: JSON.stringify({",
+                  "    first_name: 'Arjun', last_name: 'Reddy',",
+                  "    email: 'arjun' + Date.now() + '@example.com',",
+                  "    phone: '8' + String(Date.now()).slice(-10)",
+                  "  }) }",
+                  "}, (err, res) => {",
+                  "  if (!err) pm.collectionVariables.set('member_user_id', res.json().id);",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List members",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/workspaces/{{workspace_id}}/members/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspace_id}}",
+                "members"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Workspace summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/workspaces/{{workspace_id}}/summary/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "workspaces",
+                "{{workspace_id}}",
+                "summary"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Documents",
+      "item": [
+        {
+          "name": "Create document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/documents/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "documents"
+              ]
+            },
+            "description": "Saves the document and its first version in one transaction. The post_save signal writes an AuditLog.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Release checklist\",\n  \"content\": \"First draft of the release checklist.\",\n  \"workspace\": \"{{workspace_id}}\",\n  \"created_by\": \"{{user_id}}\",\n  \"status\": \"draft\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('document_id', body.id);",
+                  "pm.test('status is 2xx', () => pm.expect(pm.response.code).to.be.within(200, 299));",
+                  "pm.test('created', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update document",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/documents/{{document_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "documents",
+                "{{document_id}}"
+              ]
+            },
+            "description": "Saves a new DocumentVersion. Run it a few times to build up versions.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Release checklist v2\",\n  \"content\": \"Second draft with the testing steps added.\",\n  \"workspace\": \"{{workspace_id}}\",\n  \"status\": \"published\",\n  \"updated_by\": \"{{user_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List documents (filters)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/documents/?workspace={{workspace_id}}&status=draft,published&search=release",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "documents"
+              ],
+              "query": [
+                {
+                  "key": "workspace",
+                  "value": "{{workspace_id}}",
+                  "disabled": false
+                },
+                {
+                  "key": "status",
+                  "value": "draft,published",
+                  "disabled": false
+                },
+                {
+                  "key": "tag",
+                  "value": "python",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "release",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "workspace, status (comma separated), tag and search are all optional."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List versions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/documents/{{document_id}}/versions/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "documents",
+                "{{document_id}}",
+                "versions"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Document stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/documents/{{document_id}}/stats/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "documents",
+                "{{document_id}}",
+                "stats"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add tags to document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/documents/{{document_id}}/tags/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "documents",
+                "{{document_id}}",
+                "tags"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tags\": [\n    \"python\",\n    \"django\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Comments",
+      "item": [
+        {
+          "name": "Create comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/comments/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "comments"
+              ]
+            },
+            "description": "Add \"parent\": \"{{comment_id}}\" to the body to post a reply.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"document\": \"{{document_id}}\",\n  \"author\": \"{{user_id}}\",\n  \"content\": \"Looks good to me.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('comment_id', body.id);",
+                  "pm.test('status is 2xx', () => pm.expect(pm.response.code).to.be.within(200, 299));",
+                  "pm.test('created', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List comments (threaded)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/comments/?document={{document_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "comments"
+              ],
+              "query": [
+                {
+                  "key": "document",
+                  "value": "{{document_id}}",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Tags",
+      "item": [
+        {
+          "name": "Create tag",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/tags/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "tags"
+              ]
+            },
+            "description": "Send the same name twice to see the 409.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"tag-{{$randomInt}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Audit Logs",
+      "item": [
+        {
+          "name": "List audit logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/audit-logs/?actor={{user_id}}&from=2026-01-01&to=2030-01-01",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "audit-logs"
+              ],
+              "query": [
+                {
+                  "key": "actor",
+                  "value": "{{user_id}}",
+                  "disabled": false
+                },
+                {
+                  "key": "from",
+                  "value": "2026-01-01",
+                  "disabled": false
+                },
+                {
+                  "key": "to",
+                  "value": "2030-01-01",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "user_id",
+      "value": ""
+    },
+    {
+      "key": "member_user_id",
+      "value": ""
+    },
+    {
+      "key": "workspace_id",
+      "value": ""
+    },
+    {
+      "key": "document_id",
+      "value": ""
+    },
+    {
+      "key": "comment_id",
+      "value": ""
+    }
+  ]
+}
